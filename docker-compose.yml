@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./web
+    container_name: web-node
+    ports:
+      - "8080:3000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=nombrecloud
+      - DB_PASSWORD=root
+      - DB_NAME=dbcloud
+    volumes:
+      - ./web/static/img:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - red-cloud
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  db:
+    image: mariadb:10.6
+    container_name: db
+    environment:
+      - MARIADB_ROOT_PASSWORD=root
+      - MARIADB_DATABASE=dbcloud
+      - MARIADB_USER=nombrecloud
+      - MARIADB_PASSWORD=root
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./db/initdb.d/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - red-cloud
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  dbdata:
+
+networks:
+  red-cloud:
